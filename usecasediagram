@@ -1,0 +1,51 @@
+@startuml
+' Simplified, report-friendly Use Case diagram for AI-LMS
+skinparam defaultFontSize 18
+skinparam noteFontSize 14
+skinparam classAttributeIconSize 0
+
+title AI-LMS - Use Case Diagram
+
+left to right direction
+actor User
+actor Admin
+
+rectangle "AI LMS System" {
+  ' User Use Cases
+  usecase UC_Login          as "Login\n(username+password)\nOTP -> Email -> JWT"
+  usecase UC_Search         as "Search\n(Learning Paths & Courses)"
+  usecase UC_ViewCourse     as "View Course\n(published / showOutside)"
+  usecase UC_Enroll         as "Enroll"
+  usecase UC_AccessCourse   as "Access Course\n(Bot visible while in course)"
+  usecase UC_ViewModule     as "Open Module\n(strict order)"
+  usecase UC_TakeAssessment as "Take Assessment\n(auto-grade)"
+  usecase UC_ReceiveScore   as "Receive Score\n(no correct answers shown)"
+  usecase UC_GetCertificate as "Get Certificate\n(on passing course + assessments)"
+
+  ' Admin Use Cases
+  usecase UC_CreateContent  as "Create / Manage\nLearning Paths, Courses,\nModules, Questions"
+  usecase UC_CreateUser     as "Create User / Promote to Admin"
+}
+
+' actor relations
+User --> UC_Login
+User --> UC_Search
+User --> UC_ViewCourse
+User --> UC_Enroll
+User --> UC_AccessCourse
+User --> UC_ViewModule
+User --> UC_TakeAssessment
+User --> UC_ReceiveScore
+User --> UC_GetCertificate
+
+Admin --> UC_CreateContent
+Admin --> UC_CreateUser
+
+note right
+  Key rules:
+  - Modules belong to exactly 1 course and are strictly ordered.
+  - Assessments: single-correct = 1 point each; no negative marking.
+  - Recommendations: only modules assigned to failed questions are recommended.
+  - Files stored on server; videos may be streamed.
+end note
+@enduml

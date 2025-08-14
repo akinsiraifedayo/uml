@@ -1,0 +1,145 @@
+@startuml
+' ERD: AI-LMS
+skinparam defaultFontSize 16
+skinparam noteFontSize 14
+skinparam classAttributeIconSize 0
+
+top to bottom direction
+title AI-LMS — Entity Relationship Diagram
+
+entity "User" as user {
+  *uid : UUID <<PK>>
+  username : VARCHAR(50)
+  email : VARCHAR(100)
+  name : VARCHAR(100)
+  is_admin : BOOLEAN
+  created_at : TIMESTAMP
+}
+
+entity "LearningPath" as learning_path {
+  *id : UUID <<PK>>
+  title : VARCHAR(150)
+  description : TEXT
+  created_at : TIMESTAMP
+}
+
+entity "Course" as course {
+  *id : UUID <<PK>>
+  title : VARCHAR(150)
+  description : TEXT
+  category : VARCHAR(100)
+  published : BOOLEAN
+  show_outside : BOOLEAN
+  created_at : TIMESTAMP
+}
+
+entity "LearningPathCourse" as lp_course {
+  *learning_path_id : UUID <<FK>>
+  *course_id : UUID <<FK>>
+}
+
+entity "Module" as module {
+  *id : UUID <<PK>>
+  course_id : UUID <<FK>>
+  title : VARCHAR(150)
+  type : ENUM(pdf, docx, slides, video, assessment)
+  position : INT
+  video_url : TEXT
+  resource_path : TEXT
+  created_at : TIMESTAMP
+}
+
+entity "AssessmentModule" as assessment_module {
+  *id : UUID <<PK>>
+  course_id : UUID <<FK>>
+  title : VARCHAR(150)
+  position : INT
+  passing_score_percent : INT
+  created_at : TIMESTAMP
+}
+
+entity "Question" as question {
+  *id : UUID <<PK>>
+  assessment_module_id : UUID <<FK>>
+  text : TEXT
+  q_type : ENUM(SINGLE_CHOICE, MULTI_CHOICE)
+  points : INT
+  created_at : TIMESTAMP
+}
+
+entity "Option" as option {
+  *id : UUID <<PK>>
+  question_id : UUID <<FK>>
+  label : VARCHAR(5)
+  text : TEXT
+  is_correct : BOOLEAN
+}
+
+entity "RecommendationMapping" as recommendation {
+  *id : UUID <<PK>>
+  question_id : UUID <<FK>>
+  recommended_module_id : UUID <<FK>>
+}
+
+entity "AssessmentAttempt" as attempt {
+  *id : UUID <<PK>>
+  user_id : UUID <<FK>>
+  assessment_module_id : UUID <<FK>>
+  started_at : TIMESTAMP
+  finished_at : TIMESTAMP
+  score_points : INT
+  score_percent : DECIMAL
+  passed : BOOLEAN
+}
+
+entity "AssessmentAnswer" as answer {
+  *id : UUID <<PK>>
+  attempt_id : UUID <<FK>>
+  question_id : UUID <<FK>>
+  selected_option_ids : TEXT
+  is_correct : BOOLEAN
+  awarded_points : INT
+}
+
+entity "Enrollment" as enrollment {
+  *id : UUID <<PK>>
+  user_id : UUID <<FK>>
+  course_id : UUID <<FK>>
+  enrolled_at : TIMESTAMP
+  last_accessed_at : TIMESTAMP
+  progress_percent : DECIMAL
+  completed_at : TIMESTAMP
+}
+
+entity "Certificate" as certificate {
+  *id : UUID <<PK>>
+  user_id : UUID <<FK>>
+  course_id : UUID <<FK>>
+  issued_at : TIMESTAMP
+  certificate_serial : VARCHAR(50)
+  awarded_for_score_percent : DECIMAL
+}
+
+' ---------- Relationships ----------
+user ||--o{ enrollment
+user ||--o{ attempt
+user ||--o{ certificate
+
+learning_path ||--o{ lp_course
+course ||--o{ lp_course
+course ||--o{ module
+course ||--o{ assessment_module
+course ||--o{ enrollment
+course ||--o{ certificate
+
+module ||--o{ recommendation : recommended >
+assessment_module ||--o{ question
+question ||--o{ option
+question ||--o{ recommendation
+recommendation }o--|| module : < recommended
+
+assessment_module ||--o{ attempt
+attempt ||--o{ answer
+answer }o--|| question
+
+@enduml

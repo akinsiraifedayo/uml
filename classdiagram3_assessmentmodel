@@ -1,0 +1,122 @@
+@startuml
+' Diagram 3: Assessment Model (report-friendly)
+skinparam defaultFontSize 16
+skinparam noteFontSize 14
+skinparam classAttributeIconSize 0
+title AI-LMS — Class Diagram (Assessment Model)
+
+' ---------- Assessment Module ----------
+class AssessmentModule {
+  + id: UUID
+  + course_id: UUID
+  + title: String
+  + position: Integer
+  + time_limit_seconds: Integer  ' nullable
+  + passing_score_percent: Integer
+  + max_attempts: Integer  ' nullable (0 = unlimited)
+  + created_at: DateTime
+  --
+  + startAttempt(userId: UUID): AssessmentAttempt
+  + autoGrade(attemptId: UUID): GradeResult
+}
+
+' ---------- Question & Option ----------
+class Question {
+  + id: UUID
+  + assessment_module_id: UUID
+  + text: String
+  + q_type: QuestionType   ' SINGLE_CHOICE | MULTI_CHOICE
+  + points: Integer = 1    ' all questions equal (1 point)
+  + shuffle_options: Boolean
+  + created_by: UUID
+  + created_at: DateTime
+  --
+  + evaluate(selectedOptionIds: List<UUID>): Boolean
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTI_CHOICE
+}
+
+class Option {
+  + id: UUID
+  + question_id: UUID
+  + label: String    ' "A","B","C"...
+  + text: String
+  + is_correct: Boolean
+}
+
+' ---------- Recommendation mapping (question -> remedial module) ----------
+class RecommendationMapping {
+  + id: UUID
+  + question_id: UUID
+  + recommended_module_id: UUID
+  + created_at: DateTime
+}
+
+' ---------- Attempts & Answers ----------
+class AssessmentAttempt {
+  + id: UUID
+  + user_id: UUID
+  + assessment_module_id: UUID
+  + started_at: DateTime
+  + finished_at: DateTime
+  + score_points: Integer
+  + score_percent: Float
+  + passed: Boolean
+  --
+  + submitAnswers(answers: List<AssessmentAnswer>)
+  + calculateScore(): Integer
+}
+
+class AssessmentAnswer {
+  + id: UUID
+  + attempt_id: UUID
+  + question_id: UUID
+  + selected_option_ids: List<UUID>
+  + is_correct: Boolean
+  + awarded_points: Integer
+  + answered_at: DateTime
+}
+
+' ---------- Grade result (helper structure) ----------
+class GradeResult {
+  + total_points: Integer
+  + max_points: Integer
+  + percent: Float
+  + passed: Boolean
+}
+
+' ---------- Associations ----------
+AssessmentModule "1" -- "0..*" Question : contains >
+Question "1" -- "1..*" Option : has >
+Question "0..1" -- "0..1" RecommendationMapping : recommends >
+RecommendationMapping "1" -- "1" Module : -> recommended_module
+
+AssessmentAttempt "1" -- "1..*" AssessmentAnswer : includes >
+AssessmentAttempt "1" -- "1" AssessmentModule : for >
+AssessmentAttempt "1" -- "1" User : by >
+AssessmentAnswer "1" -- "1" Question : answers >
+
+' (User class exists in Diagram 1; referenced here for association clarity)
+class User
+User "1" -- "0..*" AssessmentAttempt : attempts >
+
+' ---------- Notes (scoring & recommendations) ----------
+note right
+  Scoring rules (as requested):
+  - Every question = 1 point.
+  - SINGLE_CHOICE: selecting the single correct option => 1 point.
+  - MULTI_CHOICE: to earn the 1 point the user must select exactly all correct options (no partial credit).
+  - No negative marking.
+  - Correct answers are NOT shown to users.
+  - Per-question historical aggregates are NOT stored (only answers per attempt are stored).
+end note
+
+note top
+  Recommendation logic:
+  - Only modules explicitly mapped to a failed question (RecommendationMapping) are recommended.
+  - After grading, the system compiles failed-question mappings and returns recommended modules.
+end note
+@enduml

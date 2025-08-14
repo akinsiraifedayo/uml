@@ -1,0 +1,40 @@
+@startuml
+title Activity Diagram — User Registration & Login with OTP Authentication
+skinparam defaultFontSize 16
+skinparam noteFontSize 14
+skinparam activityFontSize 16
+
+start
+
+partition "Registration Flow" {
+  :User opens registration page;
+  :Enter username, email, name, password;
+  :Submit registration form;
+  :System validates inputs (GDPR: minimal data stored);
+  :Create user record in database (is_admin=false);
+  :Send welcome email;
+}
+
+partition "Login Flow with OTP" {
+  :User opens login page;
+  :Enter username & password;
+  :System verifies credentials;
+  if (Credentials valid?) then (yes)
+    :Generate OTP;
+    :Send OTP to user's email;
+    :Prompt user to enter OTP;
+    :User enters OTP;
+    if (OTP matches?) then (yes)
+      :Generate JWT token;
+      :Return token to client;
+      :User gains access based on role (admin/user);
+    else (no)
+      :Show OTP error message;
+    endif
+  else (no)
+    :Show invalid credentials error;
+  endif
+}
+
+stop
+@enduml

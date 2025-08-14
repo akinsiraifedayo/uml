@@ -1,0 +1,36 @@
+@startuml
+title Activity Diagram — Admin Creates Course & Assigns Content
+skinparam defaultFontSize 16
+skinparam noteFontSize 14
+skinparam activityFontSize 16
+
+start
+
+:Admin logs in (JWT + OTP to email);
+:Open Admin Panel;
+
+:Create Learning Path (title, description);
+:Create Course (title, description, category, published/unpublished, show outside flag);
+:Assign Course to one or more Learning Paths;
+
+repeat
+  :Add Module to Course;
+  if (Module type == assessment) then (yes)
+    :Create Assessment Module (title, passing score %);
+    repeat
+      :Add Question (text, type: single/multi choice, points=1);
+      :Add Options (label, text, mark correct ones);
+      :Assign recommended Module for failed case;
+    repeat while (More questions?)
+  else (no)
+    :Attach Resource (PDF, DOCX, slides, video);
+    :If video — choose upload or streaming link;
+  endif
+repeat while (More modules?)
+
+:Save Course (maintain module order);
+:Optionally set Published = true for users to access;
+:Course now visible in search/list (if show_outside = true);
+
+stop
+@enduml

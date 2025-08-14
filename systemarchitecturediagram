@@ -1,0 +1,108 @@
+@startuml
+title AI-LMS — System Architecture Diagram
+skinparam defaultFontSize 16
+skinparam rectangleFontSize 16
+skinparam noteFontSize 14
+
+top to bottom direction
+
+' -------- Client Layer --------
+rectangle "User Browser\n(React Frontend)" as browser
+note bottom of browser
+Displays UI for  
+users & admins.  
+Handles JWT auth  
+and OTP entry.  
+Shows Botpress  
+tutor icon during  
+module view.
+end note
+
+' -------- Server Layer --------
+rectangle "Backend Server\n(Node.js + Express)" as backend
+note bottom of backend
+Handles authentication,  
+user/course/module CRUD.  
+Runs recommendation  
+engine from failed  
+questions.  
+Generates certificates.  
+Manages file uploads  
+and video streaming.
+end note
+
+' -------- External Services --------
+rectangle "Botpress API\n(Contextual Tutoring)" as botpress
+note bottom of botpress
+Provides AI tutor  
+responses based on  
+the current module's  
+context.
+end note
+
+rectangle "Email Service (SMTP)\n(OTP, Welcome, Notifications)" as email
+note bottom of email
+Sends OTP emails  
+for login, welcome  
+messages, and  
+notifications.
+end note
+
+' -------- Database Layer --------
+rectangle "Database (PostgreSQL / MySQL)" as db
+note bottom of db
+Interchangeable DB storing:  
+- Users, learning paths,  
+  courses, modules  
+- Assessments,  
+  recommendations,  
+  enrollments  
+- Certificates
+end note
+
+' -------- File Storage --------
+rectangle "Local File Storage\n(On Shared Hosting Server)" as storage
+note bottom of storage
+Stores uploaded PDFs,  
+DOCX, slides, videos,  
+or streaming links.
+end note
+
+' -------- Connections --------
+browser --> backend : HTTPS (REST API calls)
+note bottom of backend
+Secure API calls  
+between frontend  
+and backend.
+end note
+
+backend --> botpress : API calls
+note bottom of botpress
+Fetches AI tutor  
+responses during  
+course/module view.
+end note
+
+backend --> email : Send OTP & notifications
+note bottom of email
+Email service  
+integration for  
+sending login OTP  
+and alerts.
+end note
+
+backend --> db : SQL queries
+note bottom of db
+Executes all data  
+operations via  
+SQL queries.
+end note
+
+backend --> storage : File I/O
+note bottom of storage
+Uploads and retrieves  
+learning material  
+files.
+end note
+
+@enduml

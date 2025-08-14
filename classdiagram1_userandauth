@@ -1,0 +1,45 @@
+@startuml
+' Diagram 1: User & Auth
+skinparam defaultFontSize 16
+skinparam noteFontSize 14
+skinparam classAttributeIconSize 0
+
+title AI-LMS — Class Diagram (User & Auth)
+
+class User {
+  + uid: UUID
+  + username: String
+  + email: String
+  + name: String
+  + is_admin: Boolean
+  --
+  + login(): JWT
+}
+
+class OtpRecord {
+  + id: UUID
+  + user_id: UUID
+  + otp_code: String
+  + created_at: DateTime
+  + expires_at: DateTime
+  + used: Boolean
+}
+
+class AuthService {
+  + issueJwt(userId: UUID): String
+  + verifyJwt(token: String): UUID
+  + sendLoginOtp(email: String): OtpRecord
+  + verifyOtp(userId: UUID, otp: String): Boolean
+}
+
+' Associations
+User "1" -- "0..*" OtpRecord : has >
+AuthService ..> User : <<uses>>
+AuthService ..> OtpRecord : <<creates/verifies>>
+
+note right
+  - Minimal user fields (GDPR mindful).
+  - Admin = User where is_admin = true.
+  - Login flow: credentials -> send OTP -> verify OTP -> issue JWT.
+end note
+@enduml

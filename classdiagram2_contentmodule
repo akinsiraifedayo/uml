@@ -1,0 +1,113 @@
+@startuml
+' Diagram 2: Content Model (LearningPath, Course, Modules, ContentResource)
+skinparam defaultFontSize 16
+skinparam noteFontSize 14
+skinparam classAttributeIconSize 0
+title AI-LMS — Class Diagram (Content Model)
+
+' ---------- Learning Path & Course ----------
+class LearningPath {
+  + id: UUID
+  + title: String
+  + description: String
+  + slug: String
+  + created_at: DateTime
+  + published: Boolean
+  --
+  + addCourse(courseId: UUID)
+  + removeCourse(courseId: UUID)
+}
+
+class Course {
+  + id: UUID
+  + title: String
+  + description: String
+  + category_tags: List<String>
+  + published: Boolean
+  + showOutside: Boolean
+  + created_at: DateTime
+  --
+  + addModule(module: Module, position: Integer)
+  + publish()
+  + unpublish()
+}
+
+' Association class to represent many-to-many ordering in learning paths
+class LearningPathCourse {
+  + id: UUID
+  + learning_path_id: UUID
+  + course_id: UUID
+  + position: Integer     ' order of course within learning path
+}
+
+' ---------- Modules & resource ----------
+abstract class Module {
+  + id: UUID
+  + course_id: UUID
+  + title: String
+  + position: Integer      ' strict ordering inside course (1..n)
+  + type: ModuleType
+  + duration_minutes: Integer
+  + created_at: DateTime
+  --
+  + open(userId: UUID)
+  + markComplete(userId: UUID)
+}
+
+enum ModuleType {
+  PDF
+  DOCX
+  SLIDES
+  VIDEO
+  ASSESSMENT   ' Assessment module detailed in Diagram 3
+}
+
+class ResourceModule {
+  + resource_id: UUID
+  + getResource(): ContentResource
+}
+ResourceModule -|> Module
+
+class VideoModule {
+  + resource_id: UUID
+  + streaming_supported: Boolean
+  + stream(range): Stream
+}
+VideoModule -|> Module
+
+' Note: AssessmentModule (type = ASSESSMENT) is shown in Diagram 3 (Assessment Model).
+
+' ---------- Content Resource ----------
+class ContentResource {
+  + id: UUID
+  + filename: String
+  + path: String
+  + mime_type: String
+  + size_bytes: Integer
+  + uploaded_by: UUID
+  + created_at: DateTime
+  --
+  + stream(range)
+  + download()
+}
+
+' ---------- Associations ----------
+LearningPath "0..*" -- "0..*" Course : includes >
+LearningPathCourse "1" o-- "1" LearningPath : belongs_to >
+LearningPathCourse "1" o-- "1" Course : contains >
+
+Course "1" -- "1..*" Module : contains >
+Module "1" -- "0..1" ContentResource : resource >
+ResourceModule "1" -- "1" ContentResource : uses >
+VideoModule "1" -- "1" ContentResource : uses >
+
+' ---------- Notes ----------
+note right
+  Key rules (content model):
+  - A Course can belong to multiple Learning Paths (many-to-many).
+  - Modules belong to exactly 1 Course and are strictly ordered by position.
+  - Courses have category tags (only courses are searchable along with learning paths).
+  - Module types include assessment (handled separately in Assessment Model).
+  - Files stored on server; videos may be streamed or uploaded directly.
+end note
+@enduml

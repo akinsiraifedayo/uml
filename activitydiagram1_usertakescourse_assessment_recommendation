@@ -1,0 +1,51 @@
+@startuml
+title Activity Diagram — User Takes Course & Assessment with Recommendations
+skinparam defaultFontSize 16
+skinparam noteFontSize 14
+skinparam activityFontSize 16
+
+start
+
+:User logs in (JWT + OTP sent to email);
+:View list of Learning Paths & Courses (searchable);
+:Select a Course;
+if (Course Published & accessible?) then (yes)
+  :Check enrollment;
+  if (Already enrolled?) then (yes)
+    :Go to Course dashboard;
+  else (no)
+    :Enroll in Course;
+  endif
+
+  :View ordered list of Modules;
+  repeat
+    :Open next Module (PDF, DOCX, SLIDES, VIDEO, ASSESSMENT);
+    if (Module type == ASSESSMENT) then (yes)
+      :Start Assessment;
+      :Answer questions (single/multiple choice);
+      :Submit Assessment;
+      :System evaluates answers (equal points);
+      :Calculate total score & pass/fail;
+      if (Passed?) then (yes)
+        :Continue to next module;
+      else (no)
+        :Get recommended modules linked to failed questions;
+        :Review recommended modules before continuing;
+      endif
+    else (no)
+      :Mark module complete;
+    endif
+  repeat while (More modules?)
+
+  if (All modules complete & passed assessments?) then (yes)
+    :Generate and award Certificate;
+    :Notify user (certificate available);
+  else (no)
+    :Course incomplete — progress saved;
+  endif
+else (no)
+  :Access denied (course unpublished or restricted);
+endif
+
+stop
+@enduml

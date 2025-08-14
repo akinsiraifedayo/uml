@@ -1,0 +1,109 @@
+@startuml
+' Diagram 4: Enrollments, Progress & Integrations
+skinparam defaultFontSize 16
+skinparam noteFontSize 14
+skinparam classAttributeIconSize 0
+
+top to bottom direction
+title AI-LMS — Class Diagram (Enrollments, Progress & Integrations)
+
+package "Enrollment & Progress" {
+  class Enrollment {
+    + id: UUID
+    + user_id: UUID
+    + course_id: UUID
+    + enrolled_at: DateTime
+    + last_accessed_at: DateTime
+    + progress_percent: Float
+    + completed_at: DateTime
+    --
+    + updateProgress(currentModulePosition: Integer)
+    + markCompleted()
+  }
+
+  class CourseProgress {
+    + user_id: UUID
+    + course_id: UUID
+    + progress_percent: Float
+    + last_module_id: UUID
+    + updated_at: DateTime
+    --
+    + recalcFromModules()
+  }
+}
+
+package "Certificate" {
+  class Certificate {
+    + id: UUID
+    + user_id: UUID
+    + course_id: UUID
+    + issued_at: DateTime
+    + certificate_serial: String
+    + awarded_for_score_percent: Float
+    --
+    + generatePdf()
+    + verify(serial: String): Boolean
+  }
+}
+
+package "Integrations & File Service" {
+  class BotpressClient {
+    + base_url: String
+    + api_key: String
+    --
+    + sendContextualQuery(userId: UUID, moduleId: UUID, query: String): BotResponse
+    + fetchSession(sessionId: String)
+  }
+
+  class BotResponse {
+    + text: String
+    + suggested_module_id: UUID
+    + timestamp: DateTime
+  }
+
+  class FileService {
+    + storage_root: String
+    + max_upload_size_bytes: Integer
+    --
+    + upload(file, uploaded_by: UUID): ContentResource
+    + stream(resourceId: UUID, rangeHeader)
+    + delete(resourceId: UUID)
+  }
+}
+
+package "Referenced Models" {
+  class User
+  class Course
+  class Module
+  class AssessmentAttempt
+  class ContentResource
+}
+
+' ---------- Associations (kept clear in vertical layout) ----------
+User "1" -- "0..*" Enrollment : enrolls >
+Course "1" -- "0..*" Enrollment : has_enrollment >
+User "1" -- "0..*" CourseProgress : progress_for >
+Course "1" -- "0..*" CourseProgress : progress_of >
+Enrollment "1" -- "0..1" CourseProgress : syncs_with >
+
+User "1" -- "0..*" Certificate : awarded >
+Course "1" -- "0..*" Certificate : issues >
+
+BotpressClient ..> Module : <<context: module_id>>
+BotpressClient ..> BotResponse
+
+FileService ..> ContentResource : <<manages>>
+Module "0..1" -- "0..1" ContentResource : resource >
+
+AssessmentAttempt "1" -- "0..*" Certificate : may_contribute_to >
+
+' ---------- Notes ----------
+note bottom
+  - Progress is calculated at course level (not per-module persistence).
+  - Strict module ordering: Enrollment.updateProgress uses module.position.
+  - Botpress: visible only while user is inside a course/module; context = module_id.
+  - FileService represents local server storage (single-server / shared hosting).
+  - Minimal user info stored (GDPR mindful).
+end note
+
+@enduml
